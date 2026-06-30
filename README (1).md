@@ -4,7 +4,7 @@
 
 MacMobility turns a city's public mobility datasets into one cohesive, map-driven dashboard. It currently covers **Hamilton, Ontario**, visualizing ten open datasets across nine themed views, with the platform built so additional cities can be added as their open data is incorporated.
 
-🔗 **Live site:** `https://<your-username>.github.io/macmobility/`
+🔗 **Live site:** `[[https://<your-username>.github.io/macmobility/`]
 
 ---
 
