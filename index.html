@@ -1,1 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xG Sandbox · World Cup 2026</title>
+<style>
+  :root{
+    --bg:#0a1018;--panel:#111a26;--panel-2:#0d1620;--line:#1f2d3d;
+    --ink:#e8eef5;--ink-dim:#8a9bb0;--ink-faint:#56697e;--grid:#16212e;
+    --a:#e23b3b;--b:#ffcf2e;--draw:#5d7186;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink)}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.45;-webkit-font-smoothing:antialiased;padding:clamp(14px,3vw,32px);max-width:1180px;margin:0 auto}
+  .mono{font-family:ui-monospace,"SF Mono","JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:700}
+
+  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+  header h1{font-size:clamp(20px,4vw,30px);margin-top:6px;letter-spacing:-.02em}
+  header p{margin:6px 0 0;font-size:12.5px;color:var(--ink-dim);max-width:74ch}
+
+  .picker{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:end;margin-bottom:8px}
+  .field{display:flex;flex-direction:column;gap:6px}.field.right{align-items:flex-end}
+  .field label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:700}
+  select{appearance:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:9px;
+    padding:11px 13px;font-size:15px;font-weight:700;width:100%;cursor:pointer;outline:none}
+  select:focus{border-color:var(--ink-dim)}
+  .field.right select{text-align:right;direction:rtl}
+  optgroup{color:var(--ink-faint);font-style:normal}
+  .swap{background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);border-radius:9px;width:42px;height:44px;font-size:17px;cursor:pointer;transition:.15s}
+  .swap:hover{color:var(--ink);border-color:var(--ink-dim)}
+  .opts{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0 26px;font-size:12.5px;color:var(--ink-dim)}
+  .gp{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+  .gp input{accent-color:#3ecf8e;width:15px;height:15px}
+
+  section{margin-bottom:28px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:13px}
+  .sec-head h2{font-size:14px}.sec-head .hint{font-size:12px;color:var(--ink-faint)}
+
+  .winbar{display:flex;height:60px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+  .winbar>div{display:flex;flex-direction:column;justify-content:center;padding:0 15px;min-width:0;transition:flex-grow .8s cubic-bezier(.2,.7,.2,1);overflow:hidden}
+  .winbar .pct{font-size:20px;font-weight:800}.winbar .lab{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .winbar .wd{align-items:flex-end;text-align:right}
+  .xgscore{margin-top:12px;font-size:13px;color:var(--ink-dim)}.xgscore b{color:var(--ink);font-size:15px}
+
+  .ladder{display:flex;flex-direction:column;gap:8px}
+  .row{display:grid;grid-template-columns:112px 1fr 44px;align-items:center;gap:13px}
+  .row .score{font-size:13.5px;font-weight:700}.row .score small{color:var(--ink-faint);font-weight:600;font-size:10.5px;margin-left:5px}
+  .track{height:20px;background:var(--grid);border-radius:6px;overflow:hidden}
+  .fill{height:100%;border-radius:6px;width:0;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+  .row .p{font-size:12.5px;color:var(--ink-dim);text-align:right}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .panel .ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .panel h3{font-size:14px}
+  .nbadge{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--ink-dim);border:1px solid var(--line);border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .stbadge{font-size:10px;font-weight:700;letter-spacing:.05em;border-radius:20px;padding:2px 9px;white-space:nowrap}
+  .stbadge.alive{color:#9fb4ff;border:1px solid #34406b;background:#171f33}
+  .stbadge.r16{color:#5fe3a6;border:1px solid #235f44;background:#10261c}
+  .stbadge.elim{color:#f29bb4;border:1px solid #5a2b3a;background:#241019}
+  .panel .sub{font-size:11px;color:var(--ink-faint);margin:2px 0 13px;letter-spacing:.03em}
+  .game{padding:10px 0;border-top:1px solid var(--grid)}.game:first-of-type{border-top:0;padding-top:2px}
+  .game .gh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .game .opp{font-size:12px;font-weight:700}.game .res{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:5px}
+  .res.win{background:#15402f;color:#5fe3a6}.res.loss{background:#3a2230;color:#f29bb4}.res.draw{background:#27313d;color:#aebccb}
+  .xgline{display:grid;grid-template-columns:66px 1fr 38px;align-items:center;gap:9px;margin:4px 0}
+  .xgline .k{font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em}
+  .xgline .v{font-size:11.5px;text-align:right}
+  .xtrack{height:12px;background:var(--grid);border-radius:4px;overflow:hidden}
+  .xtrack .bar{height:100%;transition:width .8s cubic-bezier(.2,.7,.2,1)}
+  .xtrack.created .bar{background:#5cc6a6}.xtrack.conceded .bar{background:#d98aa0}
+  .avgrow{display:flex;gap:18px;margin-top:11px;padding-top:10px;border-top:1px solid var(--grid);font-size:11px;color:var(--ink-dim)}
+  .avgrow b{color:var(--ink);font-size:15px;display:block}
+  .legend{display:flex;gap:13px;margin-top:9px;font-size:10px;color:var(--ink-dim)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}.sw{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+  .reads{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px}
+  .read{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .read .tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:7px;color:var(--ink-dim)}
+  .read p{margin:0;font-size:12px;color:var(--ink-dim)}.read p b{color:var(--ink)}
+
+  footer{border-top:1px solid var(--line);margin-top:4px;padding-top:15px;font-size:11px;color:var(--ink-faint)}
+  footer b{color:var(--ink-dim)}
+
+  .formbox{margin:2px 0 12px;padding:11px 12px;background:var(--panel-2);border:1px solid var(--grid);border-radius:9px}
+  .frow{display:flex;justify-content:space-between;align-items:baseline;margin:3px 0;font-size:11.5px}
+  .frow .fk{color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;font-size:10px;font-weight:700}
+  .frow .fv{font-weight:700}
+  .traj{margin-top:9px;padding-top:9px;border-top:1px solid var(--grid)}
+  .traj .tk{display:block;font-size:9.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .tseq{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .tchip{font-size:12px;font-weight:700;border:1px solid var(--grid);border-radius:6px;padding:2px 8px;background:var(--panel)}
+  .tar{color:var(--ink-faint);font-size:13px}
+  .raw{display:block;font-size:10px;color:var(--ink-faint);margin-top:1px}
+  .biasctl{display:inline-flex;align-items:center;gap:9px}
+  .biasctl input[type=range]{width:120px;accent-color:#3ecf8e}
+  .biasctl .bl{font-size:11px;color:var(--ink);min-width:92px}
+  @media(max-width:680px){
+    .cols{grid-template-columns:1fr}
+    select{font-size:13px;padding:9px}
+    .row{grid-template-columns:96px 1fr 38px;gap:9px}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="eyebrow">xG Sandbox · FIFA World Cup 2026 · group stage complete · Round of 32 underway</span>
+  <h1>Pick two teams. Run the model.</h1>
+  <p>All 48 teams have now played their <b>three group games</b>. Pick any two and the model feeds their attacking and defensive xG into a Poisson model. The <b style="color:var(--ink-dim)">Form bias</b> slider weights recent games more heavily, so an improving team isn't dragged down by a weak opener — unless the weakness is still showing up in the latest game. Each team's badge shows whether they're still alive in the knockouts. Three-game samples are still small — a lens, not a lock.</p>
+</header>
+
+<div class="picker">
+  <div class="field"><label>Team A</label><select id="selA"></select></div>
+  <button class="swap" id="swap" title="Swap teams">⇄</button>
+  <div class="field right"><label>Team B</label><select id="selB"></select></div>
+</div>
+
+<div class="opts">
+  <label class="gp"><input type="checkbox" id="pushA"><span>A must win (pushes up)</span></label>
+  <label class="gp"><input type="checkbox" id="pushB"><span>B must win (pushes up)</span></label>
+  <span class="gp biasctl"><span style="font-size:12px;color:var(--ink-dim)">Form bias</span><input type="range" id="bias" min="0" max="100" value="55"><span class="bl mono" id="biasLab">recent-leaning</span></span>
+</div>
+
+<section>
+  <div class="sec-head"><h2>Match outcome</h2><span class="hint">win / draw / win</span></div>
+  <div class="winbar" id="winbar"></div>
+  <p class="xgscore" id="xgscore"></p>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Scoreline ladder</h2><span class="hint">most likely results · colour = who benefits</span></div>
+  <div class="ladder" id="ladder"></div>
+</section>
+
+<section>
+  <div class="sec-head"><h2>Expected goals — group stage</h2><span class="hint">created vs conceded, per game</span></div>
+  <div class="cols"><div class="panel" id="panelA"></div><div class="panel" id="panelB"></div></div>
+</section>
+
+<section>
+  <div class="sec-head"><h2>The pressure read</h2><span class="hint">auto-generated from the numbers</span></div>
+  <div class="reads" id="reads"></div>
+</section>
+
+<footer id="foot"></footer>
+
+<script>
+/* xG per group game — public match-tracker totals (RealGM), 2026 group stage (all 3 games).
+   r = team's result (GF-GA). xgF/xgA = xG created / conceded that match. grp = group.
+   st = current knockout status. out:1 = eliminated (dimmed). As of June 30 (R32 in progress). */
+const T = {
+ MEX:{name:"Mexico",grp:"A",c:"#27b06a",st:"Round of 32",g:[{o:"S. Africa",r:"2-0",w:"win",xgF:1.41,xgA:0.07},{o:"S. Korea",r:"1-0",w:"win",xgF:0.48,xgA:0.69},{o:"Czechia",r:"3-0",w:"win",xgF:1.79,xgA:0.47}]},
+ RSA:{name:"South Africa",grp:"A",c:"#19a55e",out:1,st:"Out · Round of 32",g:[{o:"Mexico",r:"0-2",w:"loss",xgF:0.07,xgA:1.41},{o:"Czechia",r:"1-1",w:"draw",xgF:1.39,xgA:1.02},{o:"S. Korea",r:"1-0",w:"win",xgF:1.10,xgA:1.00}]},
+ KOR:{name:"South Korea",grp:"A",c:"#4a82d6",out:1,st:"Out · group stage",g:[{o:"Czechia",r:"2-1",w:"win",xgF:1.84,xgA:0.81},{o:"Mexico",r:"0-1",w:"loss",xgF:0.69,xgA:0.48},{o:"S. Africa",r:"0-1",w:"loss",xgF:1.00,xgA:1.10}]},
+ CZE:{name:"Czechia",grp:"A",c:"#6f7fe0",out:1,st:"Out · group stage",g:[{o:"S. Korea",r:"1-2",w:"loss",xgF:0.81,xgA:1.84},{o:"S. Africa",r:"1-1",w:"draw",xgF:1.02,xgA:1.39},{o:"Mexico",r:"0-3",w:"loss",xgF:0.47,xgA:1.79}]},
+ CAN:{name:"Canada",grp:"B",c:"#ff4d4d",st:"Last 16",g:[{o:"Bosnia",r:"1-1",w:"draw",xgF:1.25,xgA:0.98},{o:"Qatar",r:"6-0",w:"win",xgF:4.75,xgA:0.18},{o:"Switzerland",r:"1-2",w:"loss",xgF:1.66,xgA:1.11}]},
+ BIH:{name:"Bosnia & H.",grp:"B",c:"#f2c14e",st:"Round of 32",g:[{o:"Canada",r:"1-1",w:"draw",xgF:0.98,xgA:1.25},{o:"Switzerland",r:"1-4",w:"loss",xgF:0.23,xgA:2.06},{o:"Qatar",r:"3-1",w:"win",xgF:1.57,xgA:1.02}]},
+ QAT:{name:"Qatar",grp:"B",c:"#b5436a",out:1,st:"Out · group stage",g:[{o:"Switzerland",r:"1-1",w:"draw",xgF:0.76,xgA:3.24},{o:"Canada",r:"0-6",w:"loss",xgF:0.18,xgA:4.75},{o:"Bosnia",r:"1-3",w:"loss",xgF:1.02,xgA:1.57}]},
+ SUI:{name:"Switzerland",grp:"B",c:"#ff5151",st:"Round of 32",g:[{o:"Qatar",r:"1-1",w:"draw",xgF:3.24,xgA:0.76},{o:"Bosnia",r:"4-1",w:"win",xgF:2.06,xgA:0.23},{o:"Canada",r:"2-1",w:"win",xgF:1.11,xgA:1.66}]},
+ BRA:{name:"Brazil",grp:"C",c:"#2bbd5e",st:"Last 16",g:[{o:"Morocco",r:"1-1",w:"draw",xgF:1.23,xgA:1.53},{o:"Haiti",r:"3-0",w:"win",xgF:1.56,xgA:0.23},{o:"Scotland",r:"3-0",w:"win",xgF:4.46,xgA:1.13}]},
+ MAR:{name:"Morocco",grp:"C",c:"#d24a4f",st:"Round of 32",g:[{o:"Brazil",r:"1-1",w:"draw",xgF:1.53,xgA:1.23},{o:"Scotland",r:"1-0",w:"win",xgF:0.99,xgA:0.51},{o:"Haiti",r:"4-2",w:"win",xgF:3.26,xgA:0.66}]},
+ HAI:{name:"Haiti",grp:"C",c:"#4a6cff",out:1,st:"Out · group stage",g:[{o:"Scotland",r:"0-1",w:"loss",xgF:1.21,xgA:1.05},{o:"Brazil",r:"0-3",w:"loss",xgF:0.23,xgA:1.56},{o:"Morocco",r:"2-4",w:"loss",xgF:0.66,xgA:3.26}]},
+ SCO:{name:"Scotland",grp:"C",c:"#3a8edb",out:1,st:"Out · group stage",g:[{o:"Haiti",r:"1-0",w:"win",xgF:1.05,xgA:1.21},{o:"Morocco",r:"0-1",w:"loss",xgF:0.51,xgA:0.99},{o:"Brazil",r:"0-3",w:"loss",xgF:1.13,xgA:4.46}]},
+ USA:{name:"USA",grp:"D",c:"#6f80e8",st:"Round of 32",g:[{o:"Paraguay",r:"4-1",w:"win",xgF:1.35,xgA:0.47},{o:"Australia",r:"2-0",w:"win",xgF:1.08,xgA:0.35},{o:"Türkiye",r:"2-3",w:"loss",xgF:2.06,xgA:2.71}]},
+ PAR:{name:"Paraguay",grp:"D",c:"#e23b3b",st:"Last 16",g:[{o:"USA",r:"1-4",w:"loss",xgF:0.47,xgA:1.35},{o:"Türkiye",r:"1-0",w:"win",xgF:0.32,xgA:2.17},{o:"Australia",r:"0-0",w:"draw",xgF:0.24,xgA:0.55}]},
+ AUS:{name:"Australia",grp:"D",c:"#ffcf2e",st:"Round of 32",g:[{o:"Türkiye",r:"2-0",w:"win",xgF:0.77,xgA:1.33},{o:"USA",r:"0-2",w:"loss",xgF:0.35,xgA:1.08},{o:"Paraguay",r:"0-0",w:"draw",xgF:0.55,xgA:0.24}]},
+ TUR:{name:"Türkiye",grp:"D",c:"#ff5160",out:1,st:"Out · group stage",g:[{o:"Australia",r:"0-2",w:"loss",xgF:1.33,xgA:0.77},{o:"Paraguay",r:"0-1",w:"loss",xgF:2.17,xgA:0.32},{o:"USA",r:"3-2",w:"win",xgF:2.71,xgA:2.06}]},
+ GER:{name:"Germany",grp:"E",c:"#e8a23a",out:1,st:"Out · Round of 32",g:[{o:"Curaçao",r:"7-1",w:"win",xgF:4.22,xgA:0.41},{o:"Côte d'Ivoire",r:"2-1",w:"win",xgF:1.89,xgA:1.22},{o:"Ecuador",r:"1-2",w:"loss",xgF:0.65,xgA:1.27}]},
+ CUW:{name:"Curaçao",grp:"E",c:"#3a78ff",out:1,st:"Out · group stage",g:[{o:"Germany",r:"1-7",w:"loss",xgF:0.41,xgA:4.22},{o:"Ecuador",r:"0-0",w:"draw",xgF:0.48,xgA:3.05},{o:"Côte d'Ivoire",r:"0-2",w:"loss",xgF:0.50,xgA:1.31}]},
+ CIV:{name:"Côte d'Ivoire",grp:"E",c:"#f59a3a",st:"Round of 32",g:[{o:"Ecuador",r:"1-0",w:"win",xgF:1.68,xgA:1.03},{o:"Germany",r:"1-2",w:"loss",xgF:1.22,xgA:1.89},{o:"Curaçao",r:"2-0",w:"win",xgF:1.31,xgA:0.50}]},
+ ECU:{name:"Ecuador",grp:"E",c:"#f2c93a",st:"Round of 32",g:[{o:"Côte d'Ivoire",r:"0-1",w:"loss",xgF:1.03,xgA:1.68},{o:"Curaçao",r:"0-0",w:"draw",xgF:3.05,xgA:0.48},{o:"Germany",r:"2-1",w:"win",xgF:1.27,xgA:0.65}]},
+ NED:{name:"Netherlands",grp:"F",c:"#f3863a",st:"Round of 32",g:[{o:"Japan",r:"1-1",w:"draw",xgF:0.78,xgA:0.59},{o:"Sweden",r:"5-1",w:"win",xgF:2.61,xgA:1.01},{o:"Tunisia",r:"3-1",w:"win",xgF:1.85,xgA:0.62}]},
+ JPN:{name:"Japan",grp:"F",c:"#e0455f",out:1,st:"Out · Round of 32",g:[{o:"Netherlands",r:"1-1",w:"draw",xgF:0.59,xgA:0.78},{o:"Tunisia",r:"4-0",w:"win",xgF:2.13,xgA:0.05},{o:"Sweden",r:"1-1",w:"draw",xgF:1.31,xgA:0.61}]},
+ SWE:{name:"Sweden",grp:"F",c:"#4a90c2",st:"Round of 32",g:[{o:"Tunisia",r:"5-1",w:"win",xgF:1.36,xgA:0.28},{o:"Netherlands",r:"1-5",w:"loss",xgF:1.01,xgA:2.61},{o:"Japan",r:"1-1",w:"draw",xgF:0.61,xgA:1.31}]},
+ TUN:{name:"Tunisia",grp:"F",c:"#ef4b4b",out:1,st:"Out · group stage",g:[{o:"Sweden",r:"1-5",w:"loss",xgF:0.28,xgA:1.36},{o:"Japan",r:"0-4",w:"loss",xgF:0.05,xgA:2.13},{o:"Netherlands",r:"1-3",w:"loss",xgF:0.62,xgA:1.85}]},
+ BEL:{name:"Belgium",grp:"G",c:"#e0a92e",st:"Round of 32",g:[{o:"Egypt",r:"1-1",w:"draw",xgF:1.35,xgA:1.08},{o:"Iran",r:"0-0",w:"draw",xgF:1.79,xgA:0.62},{o:"New Zealand",r:"5-1",w:"win",xgF:3.65,xgA:0.25}]},
+ EGY:{name:"Egypt",grp:"G",c:"#d63a3a",st:"Round of 32",g:[{o:"Belgium",r:"1-1",w:"draw",xgF:1.08,xgA:1.35},{o:"New Zealand",r:"3-1",w:"win",xgF:1.87,xgA:1.24},{o:"Iran",r:"1-1",w:"draw",xgF:0.84,xgA:1.97}]},
+ IRN:{name:"Iran",grp:"G",c:"#1f9e5a",out:1,st:"Out · group stage",g:[{o:"New Zealand",r:"2-2",w:"draw",xgF:1.50,xgA:1.24},{o:"Belgium",r:"0-0",w:"draw",xgF:0.62,xgA:1.79},{o:"Egypt",r:"1-1",w:"draw",xgF:1.97,xgA:0.84}]},
+ NZL:{name:"New Zealand",grp:"G",c:"#5b8ad6",out:1,st:"Out · group stage",g:[{o:"Iran",r:"2-2",w:"draw",xgF:1.24,xgA:1.50},{o:"Egypt",r:"1-3",w:"loss",xgF:1.24,xgA:1.87},{o:"Belgium",r:"1-5",w:"loss",xgF:0.25,xgA:3.65}]},
+ ESP:{name:"Spain",grp:"H",c:"#d64550",st:"Round of 32",g:[{o:"Cape Verde",r:"0-0",w:"draw",xgF:2.29,xgA:0.30},{o:"Saudi Arabia",r:"4-1",w:"win",xgF:2.30,xgA:0.15},{o:"Uruguay",r:"1-0",w:"win",xgF:0.86,xgA:0.20}]},
+ CPV:{name:"Cape Verde",grp:"H",c:"#3a7cff",st:"Round of 32",g:[{o:"Spain",r:"0-0",w:"draw",xgF:0.30,xgA:2.29},{o:"Uruguay",r:"2-2",w:"draw",xgF:0.88,xgA:2.32},{o:"Saudi Arabia",r:"0-0",w:"draw",xgF:1.52,xgA:0.40}]},
+ KSA:{name:"Saudi Arabia",grp:"H",c:"#1f9e5a",out:1,st:"Out · group stage",g:[{o:"Uruguay",r:"1-1",w:"draw",xgF:0.99,xgA:1.54},{o:"Spain",r:"1-4",w:"loss",xgF:0.15,xgA:2.30},{o:"Cape Verde",r:"0-0",w:"draw",xgF:0.40,xgA:1.52}]},
+ URU:{name:"Uruguay",grp:"H",c:"#4a9fd6",out:1,st:"Out · group stage",g:[{o:"Saudi Arabia",r:"1-1",w:"draw",xgF:1.54,xgA:0.99},{o:"Cape Verde",r:"2-2",w:"draw",xgF:2.32,xgA:0.88},{o:"Spain",r:"0-1",w:"loss",xgF:0.20,xgA:0.86}]},
+ FRA:{name:"France",grp:"I",c:"#3a7bd5",st:"Round of 32",g:[{o:"Senegal",r:"3-1",w:"win",xgF:1.79,xgA:0.56},{o:"Iraq",r:"3-0",w:"win",xgF:2.38,xgA:0.60},{o:"Norway",r:"4-1",w:"win",xgF:1.50,xgA:1.70}]},
+ SEN:{name:"Senegal",grp:"I",c:"#2aa35a",st:"Round of 32",g:[{o:"France",r:"1-3",w:"loss",xgF:0.56,xgA:1.79},{o:"Norway",r:"2-3",w:"loss",xgF:1.70,xgA:2.10},{o:"Iraq",r:"5-0",w:"win",xgF:3.01,xgA:0.14}]},
+ IRQ:{name:"Iraq",grp:"I",c:"#d63a3a",out:1,st:"Out · group stage",g:[{o:"Norway",r:"1-4",w:"loss",xgF:0.77,xgA:2.53},{o:"France",r:"0-3",w:"loss",xgF:0.60,xgA:2.38},{o:"Senegal",r:"0-5",w:"loss",xgF:0.14,xgA:3.01}]},
+ NOR:{name:"Norway",grp:"I",c:"#e15a5a",st:"Round of 32",g:[{o:"Iraq",r:"4-1",w:"win",xgF:2.53,xgA:0.77},{o:"Senegal",r:"3-2",w:"win",xgF:2.10,xgA:1.70},{o:"France",r:"1-4",w:"loss",xgF:1.70,xgA:1.50}]},
+ ARG:{name:"Argentina",grp:"J",c:"#6cc3e8",st:"Round of 32",g:[{o:"Algeria",r:"3-1",w:"win",xgF:1.23,xgA:0.31},{o:"Austria",r:"2-0",w:"win",xgF:2.62,xgA:0.50},{o:"Jordan",r:"3-1",w:"win",xgF:2.13,xgA:0.76}]},
+ ALG:{name:"Algeria",grp:"J",c:"#1f9e5a",st:"Round of 32",g:[{o:"Argentina",r:"1-3",w:"loss",xgF:0.31,xgA:1.23},{o:"Jordan",r:"2-1",w:"win",xgF:1.89,xgA:0.63},{o:"Austria",r:"3-3",w:"draw",xgF:1.67,xgA:1.40}]},
+ AUT:{name:"Austria",grp:"J",c:"#e25555",st:"Round of 32",g:[{o:"Jordan",r:"3-1",w:"win",xgF:1.66,xgA:0.53},{o:"Argentina",r:"0-2",w:"loss",xgF:0.50,xgA:2.62},{o:"Algeria",r:"3-3",w:"draw",xgF:1.40,xgA:1.67}]},
+ JOR:{name:"Jordan",grp:"J",c:"#c33a4a",out:1,st:"Out · group stage",g:[{o:"Austria",r:"1-3",w:"loss",xgF:0.53,xgA:1.66},{o:"Algeria",r:"1-2",w:"loss",xgF:0.63,xgA:1.89},{o:"Argentina",r:"1-3",w:"loss",xgF:0.76,xgA:2.13}]},
+ POR:{name:"Portugal",grp:"K",c:"#d6443f",st:"Round of 32",g:[{o:"DR Congo",r:"1-1",w:"draw",xgF:0.64,xgA:0.82},{o:"Uzbekistan",r:"5-0",w:"win",xgF:2.43,xgA:0.25},{o:"Colombia",r:"0-0",w:"draw",xgF:0.70,xgA:1.63}]},
+ COD:{name:"DR Congo",grp:"K",c:"#3a8ed0",st:"Round of 32",g:[{o:"Portugal",r:"1-1",w:"draw",xgF:0.82,xgA:0.64},{o:"Colombia",r:"0-1",w:"loss",xgF:0.37,xgA:0.98},{o:"Uzbekistan",r:"3-1",w:"win",xgF:2.35,xgA:0.20}]},
+ UZB:{name:"Uzbekistan",grp:"K",c:"#3aa0d0",out:1,st:"Out · group stage",g:[{o:"Colombia",r:"1-3",w:"loss",xgF:1.16,xgA:1.62},{o:"Portugal",r:"0-5",w:"loss",xgF:0.25,xgA:2.43},{o:"DR Congo",r:"1-3",w:"loss",xgF:0.20,xgA:2.35}]},
+ COL:{name:"Colombia",grp:"K",c:"#f2c93a",st:"Round of 32",g:[{o:"Uzbekistan",r:"3-1",w:"win",xgF:1.62,xgA:1.16},{o:"DR Congo",r:"1-0",w:"win",xgF:0.98,xgA:0.37},{o:"Portugal",r:"0-0",w:"draw",xgF:1.63,xgA:0.70}]},
+ ENG:{name:"England",grp:"L",c:"#d8dde6",st:"Round of 32",g:[{o:"Croatia",r:"4-2",w:"win",xgF:2.80,xgA:0.71},{o:"Ghana",r:"0-0",w:"draw",xgF:1.28,xgA:0.33},{o:"Panama",r:"2-1",w:"win",xgF:1.40,xgA:0.59}]},
+ CRO:{name:"Croatia",grp:"L",c:"#e0524d",st:"Round of 32",g:[{o:"England",r:"2-4",w:"loss",xgF:0.71,xgA:2.80},{o:"Panama",r:"1-0",w:"win",xgF:1.63,xgA:0.54},{o:"Ghana",r:"2-1",w:"win",xgF:0.42,xgA:0.73}]},
+ GHA:{name:"Ghana",grp:"L",c:"#e0b02e",st:"Round of 32",g:[{o:"Panama",r:"1-0",w:"win",xgF:1.31,xgA:0.75},{o:"England",r:"0-0",w:"draw",xgF:0.33,xgA:1.28},{o:"Croatia",r:"1-2",w:"loss",xgF:0.73,xgA:0.42}]},
+ PAN:{name:"Panama",grp:"L",c:"#c9444f",out:1,st:"Out · group stage",g:[{o:"Ghana",r:"0-1",w:"loss",xgF:0.75,xgA:1.31},{o:"Croatia",r:"0-1",w:"loss",xgF:0.54,xgA:1.63},{o:"England",r:"1-2",w:"loss",xgF:0.59,xgA:1.40}]},
+};
+
+/* ---------- MODEL ---------- */
+function avg(a){return a.reduce((s,x)=>s+x,0)/a.length;}
+function weights(n,bias){ // bias 0..1 : 0=equal, higher=recent-heavy. newest is last.
+  const decay=1-0.7*bias;
+  const w=[];for(let i=0;i<n;i++)w.push(Math.pow(decay,(n-1-i)));
+  const s=w.reduce((a,b)=>a+b,0);return w.map(x=>x/s);
+}
+function wavg(arr,w){return arr.reduce((s,x,i)=>s+x*w[i],0);}
+function slope(arr){const n=arr.length;if(n<2)return 0;
+  let sx=0,sy=0,sxx=0,sxy=0;for(let i=0;i<n;i++){sx+=i;sy+=arr[i];sxx+=i*i;sxy+=i*arr[i];}
+  const d=n*sxx-sx*sx;return d===0?0:(n*sxy-sx*sy)/d;}
+function profile(code,bias){
+  const g=T[code].g,n=g.length,w=weights(n,bias);
+  const F=g.map(x=>x.xgF),A=g.map(x=>x.xgA),NET=g.map(x=>x.xgF-x.xgA);
+  return {create:wavg(F,w),concede:wavg(A,w),rawCreate:avg(F),rawConcede:avg(A),
+    gF:F,gA:A,net:NET,atkTrend:slope(F),defTrend:slope(A),netTrend:slope(NET),n};
+}
+function fact(n){let f=1;for(let i=2;i<=n;i++)f*=i;return f;}
+function pois(k,l){return Math.exp(-l)*Math.pow(l,k)/fact(k);}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function model(a,b,pushA,pushB,bias){
+  const pa=profile(a,bias),pb=profile(b,bias);
+  let ea=(pa.create+pb.concede)/2, eb=(pb.create+pa.concede)/2;
+  if(pushA){ea*=1.12;eb*=1.06;} if(pushB){eb*=1.12;ea*=1.06;}
+  ea=clamp(ea,0.2,3.6); eb=clamp(eb,0.2,3.6);
+  const N=7;let win=0,draw=0,los=0;const cells=[];
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){const p=pois(i,ea)*pois(j,eb);cells.push({i,j,p});
+    if(i>j)win+=p;else if(i===j)draw+=p;else los+=p;}
+  const tot=win+draw+los;win/=tot;draw/=tot;los/=tot;
+  cells.sort((x,y)=>y.p-x.p);
+  return {ea,eb,win,draw,los,na:pa.n,nb:pb.n,pa,pb,top:cells.slice(0,8).map(c=>({...c,p:c.p/tot}))};
+}
+
+/* ---------- UI ---------- */
+const selA=document.getElementById('selA'),selB=document.getElementById('selB');
+const groups={};Object.keys(T).forEach(c=>{(groups[T[c].grp]=groups[T[c].grp]||[]).push(c);});
+function fillSel(sel){
+  Object.keys(groups).sort().forEach(gr=>{
+    const og=document.createElement('optgroup');og.label="Group "+gr;
+    groups[gr].sort((x,y)=>T[x].name.localeCompare(T[y].name)).forEach(c=>{
+      const opt=document.createElement('option');opt.value=c;opt.textContent=(T[c].out?'✗ ':'')+T[c].name;og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+}
+fillSel(selA);fillSel(selB);selA.value="PAR";selB.value="AUS";
+
+function trendArrow(s,invert){
+  const v=invert?-s:s;
+  if(v>0.2) return {t:invert?'↑ tightening':'↑ improving',c:'#5fe3a6'};
+  if(v<-0.2) return {t:invert?'↓ leaking more':'↓ fading',c:'#f29bb4'};
+  return {t:'→ steady',c:'#aebccb'};
+}
+function panel(code,bias){
+  const t=T[code],col=t.c,p=profile(code,bias);
+  let maxX=2.2;t.g.forEach(x=>{maxX=Math.max(maxX,x.xgF,x.xgA);});
+  const games=t.g.map(x=>`<div class="game">
+      <div class="gh"><span class="opp">vs ${x.o}</span><span class="res ${x.w}">${x.w==='win'?'W':x.w==='loss'?'L':'D'} ${x.r}</span></div>
+      <div class="xgline"><span class="k">Created</span><div class="xtrack created"><div class="bar" style="width:${x.xgF/maxX*100}%"></div></div><span class="v mono">${x.xgF.toFixed(2)}</span></div>
+      <div class="xgline"><span class="k">Conceded</span><div class="xtrack conceded"><div class="bar" style="width:${x.xgA/maxX*100}%"></div></div><span class="v mono">${x.xgA.toFixed(2)}</span></div>
+    </div>`).join('');
+  const chips=t.g.map(x=>{const net=x.xgF-x.xgA;const c=net>0.15?'#5fe3a6':net<-0.15?'#f29bb4':'#aebccb';
+    return `<span class="tchip" style="color:${c}">${net>=0?'+':''}${net.toFixed(1)}</span>`;}).join('<span class="tar">›</span>');
+  const atk=trendArrow(p.atkTrend,false),def=trendArrow(p.defTrend,true);
+  const formbox = p.n<2 ? '' : `<div class="formbox">
+      <div class="frow"><span class="fk">Attack trend</span><span class="fv" style="color:${atk.c}">${atk.t}</span></div>
+      <div class="frow"><span class="fk">Defense trend</span><span class="fv" style="color:${def.c}">${def.t}</span></div>
+      <div class="traj"><span class="tk">Net xG per game · old → new</span><div class="tseq">${chips}</div></div>
+    </div>`;
+  const stClass = t.out ? 'stbadge elim' : (t.st==='Last 16' ? 'stbadge r16' : 'stbadge alive');
+  return `<div class="ph"><h3 style="color:${col}">${t.name}</h3><span class="${stClass}">${t.st}</span></div>
+    <div class="sub">Group ${t.grp} · model uses all ${p.n} group games, recency-weighted</div>
+    ${formbox}
+    ${games}
+    <div class="avgrow">
+      <div>xG created / g<b class="mono">${p.create.toFixed(2)}</b><span class="raw">raw avg ${p.rawCreate.toFixed(2)}</span></div>
+      <div>xG conceded / g<b class="mono">${p.concede.toFixed(2)}</b><span class="raw">raw avg ${p.rawConcede.toFixed(2)}</span></div>
+    </div>
+    <div class="legend"><span><i class="sw" style="background:#5cc6a6"></i>created</span><span><i class="sw" style="background:#d98aa0"></i>conceded</span></div>`;
+}
+
+function readCards(a,b,m){
+  const ta=T[a].name,tb=T[b].name,pa=m.pa,pb=m.pb,cards=[];
+  const edge=m.win-m.los;
+  cards.push(["Where the edge is", Math.abs(edge)<0.06
+    ? `Underlying numbers split this almost evenly — close to a coin-flip on chance quality.`
+    : `<b>${edge>0?ta:tb}</b> hold the edge on form-weighted xG (creates more and/or concedes less, recent games counting most).`]);
+
+  // form trajectory — highlight the bigger mover
+  const movers=[{p:pa,name:ta},{p:pb,name:tb}].sort((x,y)=>Math.abs(y.p.netTrend)-Math.abs(x.p.netTrend));
+  const mv=movers[0];
+  if(mv.p.n>=2 && Math.abs(mv.p.netTrend)>0.3){
+    const up=mv.p.netTrend>0;
+    cards.push(["Form trajectory", `<b>${mv.name}</b> are ${up?'climbing':'sliding'} — net xG has ${up?'risen':'fallen'} game on game, so the model leans on recent form and ${up?'discounts a slow start':'fades the early promise'}.`]);
+  }
+
+  // weakness persists vs fixed (defense)
+  function defStory(p,name){
+    if(p.n<2) return null;
+    const late=p.gA[p.n-1], early=avg(p.gA.slice(0,-1));
+    if(early>1.5 && late>1.4) return ["Weakness persists", `<b>${name}</b> are still conceding chances in the latest game (${late.toFixed(1)} xG against) — the early leak wasn't a one-off, so recency weighting keeps it in.`];
+    if(early>1.5 && late<1.2) return ["Issue addressed", `<b>${name}</b> tightened up since their opener (down to ${late.toFixed(1)} xG against latest) — the early defensive number gets discounted.`];
+    return null;
+  }
+  const ds=defStory(pa,ta)||defStory(pb,tb);
+  if(ds) cards.push(ds);
+
+  if(m.na!==m.nb) cards.push(["Uneven samples", `${ta} has ${m.na} games on record, ${tb} has ${m.nb}. Fewer games = a noisier read on that side.`]);
+
+  cards.push(["Likely shape", `Model centres on <b>${m.ea.toFixed(1)}–${m.eb.toFixed(1)}</b> expected goals. ${m.ea+m.eb<2.1?'Low-scoring — one moment likely decides it.':'Enough expected output that goals should come.'}`]);
+  return cards.slice(0,4).map(c=>`<div class="read"><div class="tag">${c[0]}</div><p>${c[1]}</p></div>`).join('');
+}
+
+function shade(hex,pct){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;const f=pct/100;
+  r=Math.round(r+(pct<0?r:255-r)*f);g=Math.round(g+(pct<0?g:255-g)*f);b=Math.round(b+(pct<0?b:255-b)*f);
+  return `rgb(${clamp(r,0,255)},${clamp(g,0,255)},${clamp(b,0,255)})`;}
+function textOn(hex){const n=parseInt(hex.slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;return (r*299+g*587+b*114)/1000>150?'#1a1404':'#fff';}
+
+function render(){
+  const a=selA.value,b=selB.value;
+  const bias=(+document.getElementById('bias').value)/100;
+  const bl=document.getElementById('biasLab');
+  bl.textContent = bias===0?'equal weight' : bias<0.4?'slight recency' : bias<0.7?'recent-leaning' : 'latest-heavy';
+  if(a===b){document.getElementById('xgscore').innerHTML="Pick two different teams.";}
+  const pushA=document.getElementById('pushA').checked,pushB=document.getElementById('pushB').checked;
+  const ca=T[a].c,cb=T[b].c,m=model(a,b,pushA,pushB,bias);
+
+  document.getElementById('winbar').innerHTML=
+    `<div style="background:linear-gradient(180deg,${ca},${shade(ca,-22)});color:${textOn(ca)};flex-grow:${(m.win*100).toFixed(1)}"><span class="pct mono">${Math.round(m.win*100)}%</span><span class="lab">${T[a].name}</span></div>
+     <div style="background:#26303d;flex-grow:${(m.draw*100).toFixed(1)}"><span class="pct mono">${Math.round(m.draw*100)}%</span><span class="lab">Draw</span></div>
+     <div class="wd" style="background:linear-gradient(180deg,${cb},${shade(cb,-22)});color:${textOn(cb)};flex-grow:${(m.los*100).toFixed(1)}"><span class="pct mono">${Math.round(m.los*100)}%</span><span class="lab">${T[b].name}</span></div>`;
+
+  if(a!==b) document.getElementById('xgscore').innerHTML=
+    `Model expected score: <b class="mono">${T[a].name} ${m.ea.toFixed(2)} – ${m.eb.toFixed(2)} ${T[b].name}</b> · most likely result <b class="mono">${m.top[0].i}–${m.top[0].j}</b>.`;
+
+  const maxP=m.top[0].p;
+  document.getElementById('ladder').innerHTML=m.top.map(c=>{
+    const who=c.i>c.j?'A':c.i<c.j?'B':'D',colr=who==='A'?ca:who==='B'?cb:'var(--draw)';
+    const grad=who==='D'?`linear-gradient(90deg,#3a4859,${colr})`:`linear-gradient(90deg,${shade(colr,-35)},${colr})`;
+    const lab=who==='A'?`<small>${T[a].name}</small>`:who==='B'?`<small>${T[b].name}</small>`:'<small>draw</small>';
+    return `<div class="row"><div class="score mono">${c.i} – ${c.j} ${lab}</div><div class="track"><div class="fill" style="width:${c.p/maxP*100}%;background:${grad}"></div></div><div class="p mono">${Math.round(c.p*100)}%</div></div>`;
+  }).join('');
+
+  document.getElementById('panelA').innerHTML=panel(a,bias);
+  document.getElementById('panelB').innerHTML=panel(b,bias);
+  document.getElementById('reads').innerHTML=readCards(a,b,m);
+
+  document.getElementById('foot').innerHTML=
+    `<p><b>Method.</b> Each team's three group games set its average xG created and conceded, <b>weighted by recency</b> via the Form bias slider (so late form outweighs a weak opener, while a weakness that persists into the final group game stays in). Trend arrows and the net-xG strip show the direction of travel. Match expected goals blend one side's creation with the other's leakiness; a Poisson model turns those into a scoreline grid. "Must win" nudges that team's output up and opens space for the opponent. The model uses <b>group-stage xG only</b> — knockout results so far are reflected in each team's status badge but not yet folded into the numbers. xG totals are from a single public tracker. Three-game samples are still <b>noisy</b> — a thinking tool, not a forecast.</p>
+     <p style="margin-top:11px;padding-top:11px;border-top:1px solid var(--line);color:var(--ink-dim)"><b style="color:#f29bb4">⚠ Just for fun.</b> This is a hobby project on a small sample of games. <b>Please don't use it for betting or as a real prediction</b> — the numbers are illustrative, not advice.</p>`;
+}
+
+selA.onchange=selB.onchange=render;
+document.getElementById('pushA').onchange=document.getElementById('pushB').onchange=render;
+document.getElementById('bias').oninput=render;
+document.getElementById('swap').onclick=()=>{const t=selA.value;selA.value=selB.value;selB.value=t;render();};
+render();
+</script>
+</body>
+</html>
 
